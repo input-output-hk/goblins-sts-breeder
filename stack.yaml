@@ -1,0 +1,13 @@
+resolver: https://raw.githubusercontent.com/input-output-hk/cardano-prelude/d673b92f2a2d9354d102514d0a0fa74f8248b14a/snapshot.yaml
+
+packages:
+- .
+
+extra-deps:
+- git: git@github.com:input-output-hk/goblins.git
+  commit: f369ae6a56b7b2a34c8fd692d87f5d12d1d6d67e
+- git: git@github.com:input-output-hk/cardano-ledger-specs.git
+  commit: d36a49fbfc97d10e8d66fef5ce1fbed5c66d72a2
+  subdirs:
+    - byron/chain/executable-spec
+    - byron/semantics/executable-spec
