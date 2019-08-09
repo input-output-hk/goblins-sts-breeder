@@ -143,19 +143,18 @@ breedType :: forall sts
            . ( Goblin Bool (Signal sts), HasTrace sts
              , SeedGoblin (Environment sts), SeedGoblin (State sts))
           => BreederConfig
-          -> ([Gen (Signal sts)] -> WrappedGenSigs)
+          -> (Gen (Signal sts) -> WrappedGenSig)
           -> PredicateFailure sts
           -> ( IO (Population Bool)
-             , WrappedGenSigs
+             , WrappedGenSig
              )
 breedType breederConfig wrapper predicateFailure =
   ( do { vs <- breedStsGoblins @sts breederConfig predicateFailure
        ; writeFile "/dev/null" (show (snd (head vs))); pure vs }
-  , wrapper genSigs
+  , wrapper genSig
   )
  where
-  genSigs = (snd <$>) <$> (genEnvStateSig @sts)
-
+  genSig = snd <$> (genEnvStateSig @sts)
 
 {-
 
@@ -178,7 +177,7 @@ HasTrace CHAIN         ./byron/chain/executable-spec/src/Cardano/Spec/Chain/STS/
 data PopStruct = PopStruct
   { popStructName :: String
   , popStructPop  :: IO (Population Bool)
-  , popStructSigs :: WrappedGenSigs
+  , popStructSigs :: WrappedGenSig
   }
 
 
@@ -332,10 +331,10 @@ breeders breederConfig = concat $ take 4 [
 
 -- This is necessary to hide the differing STS types in the list and appease
 -- the typechecker.
-data WrappedGenSigs where
-  WrapDELEG    :: [Gen (Signal DELEG)]    -> WrappedGenSigs
-  WrapUTXOW    :: [Gen (Signal UTXOW)]    -> WrappedGenSigs
-  WrapUTXOWS   :: [Gen (Signal UTXOWS)]   -> WrappedGenSigs
-  WrapUPIREG   :: [Gen (Signal UPIREG)]   -> WrappedGenSigs
-  WrapUPIVOTES :: [Gen (Signal UPIVOTES)] -> WrappedGenSigs
-  WrapCHAIN    :: [Gen (Signal CHAIN)]    -> WrappedGenSigs
+data WrappedGenSig where
+  WrapDELEG    :: Gen (Signal DELEG)    -> WrappedGenSig
+  WrapUTXOW    :: Gen (Signal UTXOW)    -> WrappedGenSig
+  WrapUTXOWS   :: Gen (Signal UTXOWS)   -> WrappedGenSig
+  WrapUPIREG   :: Gen (Signal UPIREG)   -> WrappedGenSig
+  WrapUPIVOTES :: Gen (Signal UPIVOTES) -> WrappedGenSig
+  WrapCHAIN    :: Gen (Signal CHAIN)    -> WrappedGenSig

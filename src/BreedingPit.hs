@@ -25,7 +25,8 @@ import qualified Hedgehog.Internal.Tree as ITree
 
 import           Control.State.Transition
   (IRC(..), STS(..), TRC(..), applyRuleIndifferently)
-import           Control.State.Transition.Generator (HasTrace(..))
+import           Control.State.Transition.Generator (HasTrace(..), trace)
+import           Control.State.Transition.Trace (lastState, _traceEnv)
 import           Test.Goblin
 import           Moo.GeneticAlgorithm.Binary
 
@@ -65,7 +66,8 @@ breedStsGoblins breederConfig wantedFailure = do
     -- which we generate atop `initState`.
     fitness :: [Bool] -> Double
     fitness genome = scoreResult $ do -- this is a List monad
-      ess <- genEnvStateSig @sts
+      let ess = genEnvStateSig @sts
+
       let env :: Environment sts
           state :: State sts
           (env, state) = maybe (error "impossible: fitness: env, state") id
@@ -128,22 +130,17 @@ breedStsGoblins breederConfig wantedFailure = do
   population <- runGA initialize evolve
   pure (bestFirst Maximizing population)
 
-
-
 genEnvStateSig :: forall sts
                 . HasTrace sts
-               => [Gen ((Environment sts, State sts), Signal sts)]
-genEnvStateSig = do -- below is a List monad
-  initRule <- initialRules
-  pure $ do
-    -- below is a Gen monad
-    env <- envGen @sts 10
-    let (initState, _predicateFailures) =
-          applyRuleIndifferently @sts (IRC env) initRule
-
-    sig <- sigGen @sts Nothing env initState
-    pure ((env, initState), sig)
-
+               => Gen ((Environment sts, State sts), Signal sts)
+genEnvStateSig = do
+  stsTrace <- trace @sts 5
+  let env   :: Environment sts
+      env   = _traceEnv stsTrace
+  let state :: State sts
+      state = lastState stsTrace
+  sig <- sigGen @sts Nothing env state
+  pure ((env, state), sig)
 
 fitnessThreshold :: Double
 fitnessThreshold = 100
