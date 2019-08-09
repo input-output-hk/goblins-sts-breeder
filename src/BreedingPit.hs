@@ -9,11 +9,14 @@ module BreedingPit
   , Population
   , BreederConfig(..)
   , defaultBreederConfig
+  , aboveFitnessThreshold
+  , fitnessThreshold
   )
 where
 
 import           Control.Monad.Trans.State.Strict (evalState)
 import           Control.Monad.Trans.Maybe (runMaybeT)
+import           Data.List (partition)
 import qualified Data.TypeRepMap as TM
 import           Hedgehog
 import qualified Hedgehog.Internal.Gen as IGen
@@ -100,17 +103,15 @@ breedStsGoblins breederConfig wantedFailure = do
 
       scoreResult :: [[PredicateFailure sts]] -> Double
       scoreResult ls =
-        -- 5 for a desired PredicateFailure
-        -- --
-        -- ^ this objective function must be positive, so
-        -- we can't punish unwanted `PredicateFailure`s. We
-        -- also add 1 to the function, because otherwise it
-        -- seems to stall at 0.
+        -- Start at 100 points to make objective function positive
+        -- 0 points for a rule passing
+        -- -1 points for an unwanted predicate failure
+        -- 5 points for a desired predicate failure
         let failures = concat ls
-            goodFailuresCount =
-              fromIntegral (length (filter (eqPF wantedFailure)
-                                           failures))
-        in 5 * goodFailuresCount
+            (goodPFs, badPFs) = partition (eqPF wantedFailure) failures
+        in (5 * fromIntegral (length goodPFs))
+           - (  fromIntegral (length badPFs))
+           + fitnessThreshold
 
     initialize = getRandomBinaryGenomes popsize genomeSize
     select     = stochasticUniversalSampling popsize
@@ -142,3 +143,10 @@ genEnvStateSig = do -- below is a List monad
 
     sig <- sigGen @sts Nothing env initState
     pure ((env, initState), sig)
+
+
+fitnessThreshold :: Double
+fitnessThreshold = 100
+
+aboveFitnessThreshold :: Double -> Bool
+aboveFitnessThreshold x = x > fitnessThreshold

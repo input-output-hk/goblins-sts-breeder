@@ -24,6 +24,23 @@ library
 
 executable goblins-sts-breeder
   main-is:             Main.hs
-  build-depends:       base >=4.12.0.0
   hs-source-dirs:      app
+  other-modules:       Parse
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , async
+    , cs-blockchain
+    , cs-ledger
+    , directory
+    , extra
+    , filepath
+    , goblins
+    , goblins-sts-breeder
+    , optparse-applicative
+    , pretty
+    , small-steps
+    , time
+    , tree-diff >=0.0.2
+    , typerep-map
   default-language:    Haskell2010

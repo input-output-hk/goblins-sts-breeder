@@ -11,7 +11,10 @@ extra-deps:
   commit: 354b97a16510ffba43677100cec7b7333fd3bd02
   subdirs:
     - byron/chain/executable-spec
+    - byron/ledger/executable-spec
     - byron/semantics/executable-spec
 
-- moo-1.2
+- bimap-0.4.0
 - gray-code-0.3.1
+- moo-1.2
+- Unique-0.4.7.6
