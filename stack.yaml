@@ -5,7 +5,7 @@ packages:
 
 extra-deps:
 - git: git@github.com:input-output-hk/goblins.git
-  commit: bd67297fee11dff55313fab21200af3e809f4b45
+  commit: cf133ee9fb5b6ae0fbb4c0ee2e912d9bc3a16a7f
 
 - git: git@github.com:input-output-hk/cardano-ledger-specs.git
   commit: 354b97a16510ffba43677100cec7b7333fd3bd02
