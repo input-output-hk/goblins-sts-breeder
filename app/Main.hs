@@ -8,20 +8,18 @@ module Main where
 
 import           Control.Concurrent.Async (async, wait)
 import           Control.Monad (forM, forM_, replicateM_)
-import           Data.Data (Data)
 import           Data.List (partition)
 import           Data.List.Extra (chunksOf)
 import           Data.Time.Clock (diffUTCTime, getCurrentTime)
 import           Data.TreeDiff.Class
 import           Data.TreeDiff.Expr
-import qualified Data.TypeRepMap as TM
 import qualified Options.Applicative as O
 import           System.FilePath.Posix ((</>), (<.>), makeValid)
 import           System.Directory (createDirectoryIfMissing)
 import           System.IO (writeFile)
-import           Text.PrettyPrint (render)
+-- import           Text.PrettyPrint (render)
 
-import           Cardano.Ledger.Spec.STS.UTXO (UTXO, PredicateFailure(..))
+import           Cardano.Ledger.Spec.STS.UTXO (PredicateFailure(..))
 import           Cardano.Ledger.Spec.STS.UTXOW (UTXOW, PredicateFailure(..))
 import           Cardano.Ledger.Spec.STS.UTXOWS (UTXOWS, PredicateFailure(..))
 import           Cardano.Spec.Chain.STS.Rule.BBody (BBODY, PredicateFailure(..))
@@ -29,11 +27,11 @@ import           Cardano.Spec.Chain.STS.Rule.Bupi (BUPI, PredicateFailure(..))
 import           Cardano.Spec.Chain.STS.Rule.Chain (CHAIN, PredicateFailure(..))
 import           Cardano.Spec.Chain.STS.Rule.Epoch (EPOCH, PredicateFailure(..))
 import           Cardano.Spec.Chain.STS.Rule.Pbft as Pbft (PBFT, PredicateFailure(..))
-import           Cardano.Spec.Chain.STS.Rule.SigCnt as Pbft (SIGCNT, PredicateFailure(..))
-import           Control.State.Transition (Signal(..), Threshold(..))
+import           Cardano.Spec.Chain.STS.Rule.SigCnt as Pbft (PredicateFailure(..))
+import           Control.State.Transition (Signal(..))
 import           Control.State.Transition.Generator (HasTrace(..))
 import           Ledger.Delegation
-  (DELEG, ADELEG, ADELEGS, SDELEG, SDELEGS, PredicateFailure(..), EpochDiff(..))
+  (DELEG, PredicateFailure(..), EpochDiff(..))
 import           Ledger.Update as Update
   ( ApName(..)
   , ApVer(..)
@@ -49,26 +47,13 @@ import           Ledger.Update as Update
   , ProtVer(..)
   )
 import           Ledger.Core
-  ( Addr(..)
-  , Epoch(..)
+  ( Epoch(..)
   , Hash(..)
-  , Lovelace(..)
   , Owner(..)
   , Sig(..)
   , Slot(..)
   , VKey(..)
   , VKeyGenesis(..)
-  )
-import           Ledger.Delegation
-  (DCert(..)
-  )
-import           Ledger.UTxO
-  ( Tx(..)
-  , TxId(..)
-  , TxIn(..)
-  , TxOut(..)
-  , TxWits(..)
-  , Wit(..)
   )
 import           Test.Goblin
 import           Test.Goblin.Explainer
@@ -111,7 +96,7 @@ trainGoblins breederConfig = do
 
   -- Number of parallel jobs to run
   let numParallelJobs = 1
-  forM_ (chunksOf 1 (breeders breederConfig)) $ \structs -> do
+  forM_ (chunksOf numParallelJobs (breeders breederConfig)) $ \structs -> do
     startTime <- getCurrentTime
     actions <- forM structs $ \(PopStruct name action wrappedGenSigs) -> async $ do
       pop <- action
@@ -123,7 +108,7 @@ trainGoblins breederConfig = do
     let (good, bad) = partition (\(pop,_,_) -> aboveFitnessThreshold (snd (head pop))) results
     teeIt ("Total: " <> show (length results) <> ". Good: " <> show (length good) <> ". Bad: " <> show (length bad))
     forM_ good $ \(pop, name, _) -> do
-      teeIt ("PASS: " <> name <> " generated goblins. Best score: " <> show (snd (head pop) - fitnessThreshold) <> ".")
+      teeIt ("PASS: " <> name <> " generated goblins. Best adjusted score: " <> show (snd (head pop) - fitnessThreshold) <> ".")
       writePopulationToFile (nameToPath passDir name) (take 10 pop)
     forM_ bad $ \(pop, name, _) -> do
       teeIt ("FAIL: " <> name <> " didn't generate good goblins.")
@@ -134,7 +119,7 @@ nameToPath :: FilePath -> String -> FilePath
 nameToPath dir name = dir </> makeValid (subSpaces name)
  where
   subSpaces = subChar ' ' '_'
-  subChar target replacement [] = []
+  subChar _target _replacement [] = []
   subChar target replacement (c:cs)
     | target == c = replacement : (subChar target replacement cs)
     | otherwise   = c           : (subChar target replacement cs)
