@@ -56,7 +56,6 @@ import           Ledger.Core
   , VKeyGenesis(..)
   )
 import           Test.Goblin
-import           Test.Goblin.Explainer
 
 import BreedingPit
   ( aboveFitnessThreshold
@@ -219,13 +218,15 @@ breeders breederConfig = concat $ take 4 [
                             , IsAlreadyScheduled
                             , Ledger.Delegation.DoesNotVerify
                             ])
-                     , (map (ADelegSFailure . ADelegFailure)
-                            [ BeforeExistingDelegation
-                            -- This is not used in the STS rules, so can't be triggered.
-                            -- , NoLastDelegation
-                            , AfterExistingDelegation
-                            , AlreadyADelegateOf (VKey (Owner 1)) (VKeyGenesis (VKey (Owner 2)))
-                            ])
+                     -- The disjuction of the preconditions here is `True`, so
+                     -- none of these `PredicateFailure`s are throwable. Thus
+                     -- we don't bother training goblins to target them.
+                     -- , (map (ADelegSFailure . ADelegFailure)
+                     --        [ BeforeExistingDelegation
+                     --        , NoLastDelegation
+                     --        , AfterExistingDelegation
+                     --        , AlreadyADelegateOf (VKey (Owner 1)) (VKeyGenesis (VKey (Owner 2)))
+                     --        ])
                      ])
 
   utxowPFs :: [PredicateFailure UTXOW]

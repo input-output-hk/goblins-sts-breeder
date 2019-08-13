@@ -139,7 +139,7 @@ genEnvStateSig = do
       env   = _traceEnv stsTrace
   let state :: State sts
       state = lastState stsTrace
-  sig <- sigGen @sts Nothing env state
+  sig <- sigGen @sts env state
   pure ((env, state), sig)
 
 fitnessThreshold :: Double
