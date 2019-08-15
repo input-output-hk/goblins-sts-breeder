@@ -24,11 +24,13 @@ import qualified Hedgehog.Internal.Seed as Seed
 import qualified Hedgehog.Internal.Tree as ITree
 
 import           Control.State.Transition
-  (IRC(..), STS(..), TRC(..), applyRuleIndifferently)
+  (STS(..), TRC(..), applyRuleIndifferently)
 import           Control.State.Transition.Generator (HasTrace(..), trace)
 import           Control.State.Transition.Trace (lastState, _traceEnv)
 import           Test.Goblin
 import           Moo.GeneticAlgorithm.Binary
+
+import           STSExtra (STSExtra(..))
 
 data BreederConfig = BreederConfig
   { bcPopSize    :: !Int
@@ -49,7 +51,7 @@ defaultBreederConfig = BreederConfig
 
 breedStsGoblins
   :: forall sts
-   . ( HasTrace sts, Goblin Bool (Signal sts)
+   . ( HasTrace sts, Goblin Bool (Signal sts), STSExtra sts
      , SeedGoblin (Environment sts), SeedGoblin (State sts))
   => BreederConfig
   -> PredicateFailure sts
@@ -80,7 +82,7 @@ breedStsGoblins breederConfig wantedFailure = do
       -- Seed the bagOfTricks
       let seedBagOfTricks = seeder env >> seeder state
 
-      let gd = spawnGoblin genome TM.empty
+      let gd = mkGoblin genome TM.empty
       let newGenSig = flip evalState gd $ do
                         seedBagOfTricks
                         tinker (snd <$> ess)

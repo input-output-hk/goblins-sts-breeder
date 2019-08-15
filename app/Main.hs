@@ -14,7 +14,7 @@ import           Data.Time.Clock (diffUTCTime, getCurrentTime)
 import           Data.TreeDiff.Class
 import           Data.TreeDiff.Expr
 import qualified Options.Applicative as O
-import           System.FilePath.Posix ((</>), (<.>), makeValid)
+import           System.FilePath.Posix ((</>), (<.>))
 import           System.Directory (createDirectoryIfMissing)
 import           System.IO (writeFile)
 -- import           Text.PrettyPrint (render)
@@ -67,6 +67,7 @@ import BreedingPit
   , BreederConfig(..)
   )
 import Parse
+import STSExtra
 
 
 allRunsDir :: FilePath
@@ -108,20 +109,11 @@ trainGoblins breederConfig = do
     teeIt ("Total: " <> show (length results) <> ". Good: " <> show (length good) <> ". Bad: " <> show (length bad))
     forM_ good $ \(pop, name, _) -> do
       teeIt ("PASS: " <> name <> " generated goblins. Best adjusted score: " <> show (snd (head pop) - fitnessThreshold) <> ".")
-      writePopulationToFile (nameToPath passDir name) (take 10 pop)
+      writePopulationToFile (passDir </> name) (take 10 pop)
     forM_ bad $ \(pop, name, _) -> do
       teeIt ("FAIL: " <> name <> " didn't generate good goblins.")
-      writePopulationToFile (nameToPath failDir name) (take 10 pop)
+      writePopulationToFile (failDir </> name) (take 10 pop)
     teeIt ""
-
-nameToPath :: FilePath -> String -> FilePath
-nameToPath dir name = dir </> makeValid (subSpaces name)
- where
-  subSpaces = subChar ' ' '_'
-  subChar _target _replacement [] = []
-  subChar target replacement (c:cs)
-    | target == c = replacement : (subChar target replacement cs)
-    | otherwise   = c           : (subChar target replacement cs)
 
 tee :: FilePath -> String -> IO ()
 tee fp msg = do
@@ -139,7 +131,7 @@ explainTheGoblin genSigs goblin =
 
 
 breedType :: forall sts
-           . ( Goblin Bool (Signal sts), HasTrace sts
+           . ( Goblin Bool (Signal sts), HasTrace sts, STSExtra sts
              , SeedGoblin (Environment sts), SeedGoblin (State sts))
           => BreederConfig
           -> (Gen (Signal sts) -> WrappedGenSig)
@@ -184,27 +176,27 @@ breeders :: BreederConfig -> [PopStruct]
 breeders breederConfig = concat $ take 4 [
 
   -- HasTrace DELEG         byron/ledger/executable-spec/src/Ledger/Delegation.hs
-    map (\pf -> uncurry (PopStruct ("DELEG: " <> show pf)) (breedType breederConfig WrapDELEG pf))
+    map (\pf -> uncurry (PopStruct ("DELEG_" <> renderPF pf)) (breedType breederConfig WrapDELEG pf))
         delegPFs
 
   -- HasTrace UTXOW         byron/ledger/executable-spec/src/Cardano/Ledger/Spec/STS/UTXOW.hs
-  , map (\pf -> uncurry (PopStruct ("UTXOW: " <> show pf)) (breedType breederConfig WrapUTXOW pf))
+  , map (\pf -> uncurry (PopStruct ("UTXOW_" <> renderPF pf)) (breedType breederConfig WrapUTXOW pf))
         utxowPFs
 
   -- HasTrace UPIREG        byron/ledger/executable-spec/src/Ledger/Update.hs
-  , map (\pf -> uncurry (PopStruct ("UPIREG: " <> show pf)) (breedType breederConfig WrapUPIREG pf))
+  , map (\pf -> uncurry (PopStruct ("UPIREG_" <> renderPF pf)) (breedType breederConfig WrapUPIREG pf))
         upiregPFs
 
   -- HasTrace UPIVOTES      byron/ledger/executable-spec/src/Ledger/Update.hs
-  , map (\pf -> uncurry (PopStruct ("UPIVOTES: " <> show pf)) (breedType breederConfig WrapUPIVOTES pf))
+  , map (\pf -> uncurry (PopStruct ("UPIVOTES_" <> renderPF pf)) (breedType breederConfig WrapUPIVOTES pf))
         upivotesPFs
 
   -- HasTrace UTXOWS        byron/ledger/executable-spec/src/Cardano/Ledger/Spec/STS/UTXOWS.hs
-  , map (\pf -> uncurry (PopStruct ("UTXOWS: " <> show pf)) (breedType breederConfig WrapUTXOWS pf))
+  , map (\pf -> uncurry (PopStruct ("UTXOWS_" <> renderPF pf)) (breedType breederConfig WrapUTXOWS pf))
         (map UtxowFailure utxowPFs)
 
   -- HasTrace CHAIN         byron/chain/executable-spec/src/Cardano/Spec/Chain/STS/Rule/Chain.hs
-  , map (\pf -> uncurry (PopStruct ("CHAIN " <> show pf)) (breedType breederConfig WrapCHAIN pf))
+  , map (\pf -> uncurry (PopStruct ("CHAIN_" <> renderPF pf)) (breedType breederConfig WrapCHAIN pf))
         chainPFs
 
   ]
