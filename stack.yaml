@@ -5,10 +5,10 @@ packages:
 
 extra-deps:
 - git: git@github.com:input-output-hk/goblins.git
-  commit: 6ea969b31c2bbaa7ba78b8e83b53a36bedfae10e
+  commit: 4025131b7f614d9c9276f2edb358b3d4722170d9
 
 - git: git@github.com:input-output-hk/cardano-ledger-specs.git
-  commit: 67445f63728ad4eeb8c6259bc29373e48f959eec
+  commit: 4d6482714f8e9f5683d2b83b97282b8a55c51c7e
   subdirs:
     - byron/chain/executable-spec
     - byron/ledger/executable-spec

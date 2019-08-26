@@ -210,15 +210,17 @@ breeders breederConfig = concat $ take 4 [
                             , IsAlreadyScheduled
                             , Ledger.Delegation.DoesNotVerify
                             ])
+                     {-
                      -- The disjuction of the preconditions here is `True`, so
                      -- none of these `PredicateFailure`s are throwable. Thus
                      -- we don't bother training goblins to target them.
-                     -- , (map (ADelegSFailure . ADelegFailure)
-                     --        [ BeforeExistingDelegation
-                     --        , NoLastDelegation
-                     --        , AfterExistingDelegation
-                     --        , AlreadyADelegateOf (VKey (Owner 1)) (VKeyGenesis (VKey (Owner 2)))
-                     --        ])
+                     , (map (ADelegSFailure . ADelegFailure)
+                            [ S_BeforeExistingDelegation
+                            , S_NoLastDelegation
+                            , S_AfterExistingDelegation
+                            , S_AlreadyADelegateOf (VKey (Owner 1)) (VKeyGenesis (VKey (Owner 2)))
+                            ])
+                     -}
                      ])
 
   utxowPFs :: [PredicateFailure UTXOW]
@@ -261,16 +263,19 @@ breeders breederConfig = concat $ take 4 [
              ]
 
   upivotesPFs :: [PredicateFailure UPIVOTES]
-  upivotesPFs = map (ApplyVotesFailure . UpivoteFailure . UPVOTEFailure)
-                    ([ HigherThanThdAndNotAlreadyConfirmed
-                     , CfmThdNotReached
-                     , AlreadyConfirmed
-                     ] ++ (map ADDVOTEFailure addvotePFs))
+  upivotesPFs = map (ApplyVotesFailure . UpivoteFailure . UPVOTEFailure . ADDVOTEFailure)
+                    addvotePFs
+                    {-
+                    ([ S_HigherThanThdAndNotAlreadyConfirmed
+                     , S_CfmThdNotReached
+                     , S_AlreadyConfirmed
+                     ])
+                    -}
 
   upiendPFs :: [PredicateFailure UPIEND]
   upiendPFs = map UPENDFailure
                   [ ProtVerUnknown (ProtVer 0 0 0)
-                  , TryNextRule
+                  -- , S_TryNextRule
                   , CanAdopt (ProtVer 0 0 0)
                   , CannotAdopt (ProtVer 0 0 0)
                   , Update.NotADelegate (VKey (Owner 0))

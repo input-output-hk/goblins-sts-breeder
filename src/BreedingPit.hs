@@ -113,9 +113,9 @@ breedStsGoblins breederConfig wantedFailure = do
         -- 5 points for a desired predicate failure
         let failures = concat ls
             (goodPFs, badPFs) = partition (eqPF wantedFailure) failures
-        in (5 * fromIntegral (length goodPFs))
-           - (  fromIntegral (length badPFs))
-           + fitnessThreshold
+        in (5   * fromIntegral (length goodPFs))
+         - (0.3 *  fromIntegral (length badPFs))
+         + fitnessThreshold
 
     initialize = getRandomBinaryGenomes popsize genomeSize
     select     = stochasticUniversalSampling popsize
